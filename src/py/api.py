@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 import sys
 
 sys.path.append('./src')
@@ -11,7 +11,18 @@ def startup_func():
     utils.start_up()
 
 
+@app.get("/interval-data")
+def interval_data(
+    filter_rule: str = Query("OB", description="Filter rule"),
+    multi_market: str = Query("none", description="Multi-market setting")
+):
+    try:
+        data = utils.get_interval_data(filter_rule, multi_market)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @app.get("/")
 def root():
-    utils.test()
-    return {f"message": "Hello World"}
+
+    return {f"message": utils.test()}

@@ -137,23 +137,28 @@ getIntervalData:{[params]
 // Usage
 ////////////////////////////////
 
-params:`symList`date`startTime`endTime`columns!(
-    `VOD.L`BARC.L; 
-    2013.01.15;
-    08:30;09:30;
-    `volume`vwap`range`maxbid`minask`lastmidprice);
+/ params:`symList`date`startTime`endTime`columns!(
+/     `VOD.L`BARC.L; 
+/     2013.01.15;
+/     08:30;09:30;
+/     `volume`vwap`range`maxbid`minask`lastmidprice);
 
 / default, filterRule=orderbook & multiMarketRule=none 
-a:getIntervalData params;
+/ a:getIntervalData params;
 
 / change filterRule from 'orderbook' to 'total market' 
-b:getIntervalData @[params;`filterRule;:;`TM];
+/ b:getIntervalData @[params;`filterRule;:;`TM];
 
  
 / change multiMarketRule from 'none' to 'multi' to get consolidated analytics 
-c:getIntervalData @[params;`multiMarketRule;:;`multi];
+/ c:getIntervalData @[params;`multiMarketRule;:;`multi];
 
-save `$":./data/debug/trade.csv";
+/ save `$":./data/debug/trade.csv";
+
+
+////////////////////////////////
+// API Helpers
+////////////////////////////////
 
 / build params
 buildParams:{[filterRule; multiMarketRule]
