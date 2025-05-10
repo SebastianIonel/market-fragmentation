@@ -161,13 +161,17 @@ c:getIntervalData @[params;`multiMarketRule;:;`multi];
 ////////////////////////////////
 
 / build params
-buildParams:{[filterRule; multiMarketRule]
+buildParams:{[filter;multiMarket]
     params:`symList`date`startTime`endTime`columns!(
     `VOD.L`BARC.L; 
     2013.01.15;
     08:30;09:30;
     `volume`vwap`range`maxbid`minask`lastmidprice);
-    params:@[params;`filterRule;:;filterRule];
-    params:@[params;`multiMarketRule;:;multiMarketRule];
+    if[multiMarket~`none;
+        params:@[params;`filterRule;:;filter];
+    ];
+    if[multiMarket~`multi;
+        params:@[params;`multiMarketRule;:;multiMarket];
+    ];
     params
  };
