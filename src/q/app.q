@@ -91,6 +91,12 @@ getIntervalData:{[params]
         params:@[params;`symList;:;extended_syms`symList];
     ];
 
+    / check if date is valid
+    if[not params[`date] in trade`date;
+        / return {'sym': ['BARC.L', 'VOD.L'], 'volume': [0, 0], 'vwap': [0, 0], 'range': [0, 0], 'maxbid': [0, 163.02900411741146], 'minask': [0, 0], 'lastmidprice': [0, 0]}
+        res:([]sym:params[`symList]; volume:0; vwap:0; range:0; maxbid:0; minask:0; lastmidprice:0);
+        :(`sym,params[`columns])#0!res
+    ];
   res:select volume:sum[size], vwap:wavg[size;price], range:max[price]-min[price], 
            maxprice:max price, minprice:min price,
            maxbid:max bid, minask:min ask,
@@ -139,7 +145,7 @@ getIntervalData:{[params]
 
 params:`symList`date`startTime`endTime`columns!(
     `VOD.L`BARC.L; 
-    2013.01.15;
+    2025.01.15;
     08:30;09:30;
     `volume`vwap`range`maxbid`minask`lastmidprice);
 
@@ -160,18 +166,53 @@ c:getIntervalData @[params;`multiMarketRule;:;`multi];
 // API Helpers
 ////////////////////////////////
 
-/ build params
-buildParams:{[filter;multiMarket]
+/ build params TODO update it for all the params
+/ buildParams:{[filter;multiMarket]
+/     params:`symList`date`startTime`endTime`columns!(
+/     `VOD.L`BARC.L; 
+/     2013.01.15;
+/     08:30;09:30;
+/     `volume`vwap`range`maxbid`minask`lastmidprice);
+/     if[multiMarket~`none;
+/         params:@[params;`filterRule;:;filter];
+/     ];
+/     if[multiMarket~`multi;
+/         params:@[params;`multiMarketRule;:;multiMarket];
+/     ];
+/     params
+/  };
+
+buildParams:{[arg]
     params:`symList`date`startTime`endTime`columns!(
     `VOD.L`BARC.L; 
     2013.01.15;
     08:30;09:30;
     `volume`vwap`range`maxbid`minask`lastmidprice);
-    if[multiMarket~`none;
-        params:@[params;`filterRule;:;filter];
+    args:" " vs arg;
+    / -1 args;
+    / filter:`$args[0];
+    / multiMarket:`$args[1];
+    / startTime:"T"$args[2];
+    / endTime:"T"$args[3];
+    / date:"D"$args[4];
+    if[`none~`$args[0];
+        params:@[params;`filterRule;:;`$args[0]];
     ];
-    if[multiMarket~`multi;
-        params:@[params;`multiMarketRule;:;multiMarket];
+    if[`multi~`$args[1];
+        params:@[params;`multiMarketRule;:;`$args[1]];
+    ];
+
+    if[not ""~args[2];
+        params:@[params;`startTime;:;"T"$args[2]];
+    ];
+    if[not ""~args[3];
+        params:@[params;`endTime;:;"T"$args[3]];
+    ];
+    if[not ""~args[4];
+        params:@[params;`date;:;"D"$args[4]];
     ];
     params
  };
+
+
+/ TODO 1. Distribuția numărului de tranzacții pe qualifier
