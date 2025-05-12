@@ -58,7 +58,7 @@ function FinanceChart() {
 
   return (
     <div style={{ width: '100%', padding: '1rem' }}>
-      <h2>Indicatori Financiari per Simbol</h2>
+      <h2>Indicators per Simbol</h2>
 
       <form
         onSubmit={e => {
@@ -99,7 +99,6 @@ function FinanceChart() {
           <input type="date" value={date} onChange={e => setDate(e.target.value)} />
         </label>
 
-        <button type="submit">Actualizează</button>
       </form>
 
       <div style={{ width: '100%', height: 500 }}>

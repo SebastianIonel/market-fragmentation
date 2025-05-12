@@ -78,6 +78,63 @@ update bid:price-0.5*spread, ask:price+0.5*spread from `trade;
 
 `time xasc `trade;
 
+////////////////////////////////
+// Utilities
+////////////////////////////////
+
+.util.applyDefaultParams:{[params]
+    .cfg.defaultParams,params
+    };
+
+.util.validTrade:{[sym;qualifier;rule] 
+    venue:.cfg.symVenue[sym];
+    validqualifiers:(.cfg.filterrules[rule]each venue)`qualifier;
+    first each qualifier in' validqualifiers
+    };
+
+.util.extendSymsForMultiMarket:{[symList] 
+    distinct raze {update origSymList:x from
+                   select symList:sym from .cfg.multiMarketMap
+                   where primarysym in .cfg.multiMarketMap[x]`primarysym
+                   } each (),symList
+    }
+
+/ debug
+params:`symList`date`startTime`endTime`columns!(
+    `VOD.L`BARC.L; 
+    2013.01.15;
+    08:30;09:30;
+    `volume`vwap`range`maxbid`minask`lastmidprice);
+
+////////////////////////////////
+// API Helpers
+////////////////////////////////
+
+buildParams:{[arg]
+    params:`symList`date`startTime`endTime`columns!(
+    `VOD.L`BARC.L; 
+    2013.01.15;
+    08:30;09:30;
+    `volume`vwap`range`maxbid`minask`lastmidprice);
+    args:" " vs arg;
+    if[`none~`$args[0];
+        params:@[params;`filterRule;:;`$args[0]];
+    ];
+    if[`multi~`$args[1];
+        params:@[params;`multiMarketRule;:;`$args[1]];
+    ];
+
+    if[not ""~args[2];
+        params:@[params;`startTime;:;"T"$args[2]];
+    ];
+    if[not ""~args[3];
+        params:@[params;`endTime;:;"T"$args[3]];
+    ];
+    if[not ""~args[4];
+        params:@[params;`date;:;"D"$args[4]];
+    ];
+    params
+ };
 
 ////////////////////////////////
 // Analytic functions
@@ -116,103 +173,27 @@ getIntervalData:{[params]
   :(`sym,params[`columns])#0!res
  };
 
-////////////////////////////////
-// Utilities
-////////////////////////////////
-
-.util.applyDefaultParams:{[params]
-    .cfg.defaultParams,params
-    };
-
-.util.validTrade:{[sym;qualifier;rule] 
-    venue:.cfg.symVenue[sym];
-    validqualifiers:(.cfg.filterrules[rule]each venue)`qualifier;
-    first each qualifier in' validqualifiers
-    };
-
-.util.extendSymsForMultiMarket:{[symList] 
-    distinct raze {update origSymList:x from
-                   select symList:sym from .cfg.multiMarketMap
-                   where primarysym in .cfg.multiMarketMap[x]`primarysym
-                   } each (),symList
-    }
 
 
+getDistributionQualifier:{[params]
+  params:.util.applyDefaultParams[params]; 
+    if[params[`multiMarketRule]~`multi;
+        extended_syms:.util.extendSymsForMultiMarket[params`symList]; 
+        params:@[params;`symList;:;extended_syms`symList];
+    ];
+    
+    / check if date is valid
+    if[not params[`date] in trade`date;  
+      res: select amount:0 by qualifier from trade;
+      :select qualifier, amount from res
+    ];
+  res: select amount:count i by qualifier from trade
+    where date=params[`date],
+          time within (params`startTime;params`endTime);
+   
+   select qualifier, amount from res
+ }
 
-////////////////////////////////
-// Usage
-////////////////////////////////
-
-params:`symList`date`startTime`endTime`columns!(
-    `VOD.L`BARC.L; 
-    2025.01.15;
-    08:30;09:30;
-    `volume`vwap`range`maxbid`minask`lastmidprice);
-
-/ default, filterRule=orderbook & multiMarketRule=none 
-a:getIntervalData params;
-
-/ change filterRule from 'orderbook' to 'total market' 
+/ debug
+a: getDistributionQualifier  params;
 b:getIntervalData @[params;`filterRule;:;`TM];
-
- 
-/ change multiMarketRule from 'none' to 'multi' to get consolidated analytics 
-c:getIntervalData @[params;`multiMarketRule;:;`multi];
-
-/ save `$":./data/debug/trade.csv";
-
-
-////////////////////////////////
-// API Helpers
-////////////////////////////////
-
-/ build params TODO update it for all the params
-/ buildParams:{[filter;multiMarket]
-/     params:`symList`date`startTime`endTime`columns!(
-/     `VOD.L`BARC.L; 
-/     2013.01.15;
-/     08:30;09:30;
-/     `volume`vwap`range`maxbid`minask`lastmidprice);
-/     if[multiMarket~`none;
-/         params:@[params;`filterRule;:;filter];
-/     ];
-/     if[multiMarket~`multi;
-/         params:@[params;`multiMarketRule;:;multiMarket];
-/     ];
-/     params
-/  };
-
-buildParams:{[arg]
-    params:`symList`date`startTime`endTime`columns!(
-    `VOD.L`BARC.L; 
-    2013.01.15;
-    08:30;09:30;
-    `volume`vwap`range`maxbid`minask`lastmidprice);
-    args:" " vs arg;
-    / -1 args;
-    / filter:`$args[0];
-    / multiMarket:`$args[1];
-    / startTime:"T"$args[2];
-    / endTime:"T"$args[3];
-    / date:"D"$args[4];
-    if[`none~`$args[0];
-        params:@[params;`filterRule;:;`$args[0]];
-    ];
-    if[`multi~`$args[1];
-        params:@[params;`multiMarketRule;:;`$args[1]];
-    ];
-
-    if[not ""~args[2];
-        params:@[params;`startTime;:;"T"$args[2]];
-    ];
-    if[not ""~args[3];
-        params:@[params;`endTime;:;"T"$args[3]];
-    ];
-    if[not ""~args[4];
-        params:@[params;`date;:;"D"$args[4]];
-    ];
-    params
- };
-
-
-/ TODO 1. Distribuția numărului de tranzacții pe qualifier
